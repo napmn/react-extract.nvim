@@ -1,4 +1,7 @@
+local config = require("react-extract.config")
 local utils = require("react-extract.utils")
+local ts = require("react-extract.ts")
+local opts
 
 local M = {}
 
@@ -7,20 +10,87 @@ local ACTION_MATCH_PATTERNS = {
   "^Import"
 }
 
-local insert_component_content = function(filepath, lines, indent_char)
+local get_declaration_properties_str = function(properties)
+  if #properties > 0 then
+    return "{ " .. table.concat(properties, ", ") .. " }"
+  end
+  return ""
+end
+
+local get_constructor_properties_str = function(properties)
+  local properties_str = " "
+  for _, property in ipairs(properties) do
+    properties_str = properties_str .. property .. "={" .. property .. "} "
+  end
+  return properties_str
+end
+
+local get_type_properties_str = function(properties, indent_char)
+  local properties_str = ""
+  for _, property in ipairs(properties) do
+    local property_str = string.gsub(
+      opts.ts_type_property_template,
+      "%[INDENT%]",
+      string.rep(indent_char, utils.get_indent(indent_char, 1))
+    )
+    property_str = string.gsub(property_str, "%[PROPERTY%]", property)
+    properties_str = properties_str .. property_str
+  end
+
+  return properties_str
+end
+
+-- Replaces placeholders in component template string and returns
+-- table of lines
+local replace_placeholders_and_split = function(s, name, properties, indent_char)
+  s = string.gsub(s, "%[COMPONENT_NAME%]", name)
+  s = string.gsub(
+    s,
+    "%[PROPERTIES%]",
+    get_declaration_properties_str(properties)
+  )
+  s = string.gsub(
+    s,
+    "%[INDENT%]",
+    string.rep(indent_char, utils.get_indent(indent_char, 1))
+  )
+  s = string.gsub(
+    s,
+    "%[TYPE_PROPERTIES%]",
+    get_type_properties_str(properties, indent_char)
+  )
+  local lines = utils.split(s, "\n")
+  for i, line in ipairs(lines) do
+    lines[i] = string.gsub(line, "%[EMPTY_LINE%]", "")
+  end
+
+  return lines
+end
+
+local insert_component_content = function(
+  filepath,
+  lines,
+  properties,
+  indent_char
+)
   vim.api.nvim_command("edit " .. filepath)
   local new_buffer = vim.api.nvim_get_current_buf()
-  local component_name = filepath:match("^.+/(.+)[.].+$")
+  local component_name, ext = string.match(
+    utils.get_filename(filepath), "^(.+)[.](.+)$"
+  )
 
-  -- TODO: make this configurable
-  local all_lines = {
-    "export const " .. component_name .. " = () => {",
-    string.rep(indent_char, utils.get_indent(indent_char, 1)) .. "return (",
-  }
-  local end_lines = {
-    string.rep(indent_char, utils.get_indent(indent_char, 1)) .. ")",
-    "}"
-  }
+  local all_lines = replace_placeholders_and_split(
+    ext == "tsx" and opts.ts_template_before or opts.js_template_before,
+    component_name,
+    properties,
+    indent_char
+  )
+  local end_lines = replace_placeholders_and_split(
+    ext == "tsx" and opts.ts_template_after or opts.js_template_after,
+    component_name,
+    properties,
+    indent_char
+  )
   utils.table_extend(all_lines, lines)
   utils.table_extend(all_lines, end_lines)
 
@@ -74,7 +144,7 @@ local autoimport_component = function()
 
       vim.lsp.buf_request(0, "workspace/executeCommand", command_params)
     end)
-  end, 350)
+  end, opts.autoimport_defer_ms)
 end
 
 local replace_content_in_original = function(
@@ -82,28 +152,39 @@ local replace_content_in_original = function(
   original_start,
   original_end,
   indentation_str,
-  new_component_name
+  new_component_name,
+  properties
 )
   vim.api.nvim_set_current_buf(original_buffer)
+
+  local properties_str = get_constructor_properties_str(properties)
 
   vim.api.nvim_buf_set_lines(
     original_buffer,
     original_start,
     original_end,
     false,
-    {indentation_str .. "<" .. new_component_name .. " />"}
+    {
+      indentation_str
+      .. "<"
+      .. new_component_name
+      .. properties_str
+      .. "/>"
+    }
   )
 
   -- set cursor on new component so we can get code actions
   vim.api.nvim_win_set_cursor(0, { original_start + 1, #indentation_str + 1 })
 
-  autoimport_component()
+  if opts.use_autoimport then
+    autoimport_component()
+  end
 end
 
 local reduce_lines_indent = function(lines, indent_char)
   local min_indent = utils.get_indent(indent_char, 2)
   local initial_indent = #string.match(lines[1], "^%s+")
-  local sub_indent = math.max(initial_indent - min_indent, min_indent)
+  local sub_indent = initial_indent - min_indent
   local sub_indent_pattern = "^" .. string.rep("%s", sub_indent)
 
   local reduced_lines = {}
@@ -138,9 +219,11 @@ local handle_user_input = function(filepath)
     indent_char
   )
   local selection_lines = reduce_lines_indent(selection_lines, indent_char)
+  local identifiers = ts.get_identifiers(original_start)
   local component_name = insert_component_content(
     filepath,
     selection_lines,
+    identifiers,
     indent_char
   )
 
@@ -149,16 +232,29 @@ local handle_user_input = function(filepath)
     original_start,
     original_end,
     indent_str,
-    component_name
+    component_name,
+    identifiers
   )
 end
 
-M.extract_to_component = function()
+local extract_to_component = function()
   local input_opts = {
     prompt = "Enter path to new component: ",
     completion = "dir",
   }
   vim.ui.input(input_opts, handle_user_input)
+end
+
+M.extract_to_current_file = function()
+  -- TODO
+end
+
+M.extract_to_new_file = function()
+  return extract_to_component()
+end
+
+M.setup = function(user_opts)
+  opts = config.apply_options(user_opts)
 end
 
 return M

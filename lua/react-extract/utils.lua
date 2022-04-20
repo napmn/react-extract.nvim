@@ -1,10 +1,11 @@
+local config = require("react-extract.config").config
 local M = {}
 local loop = vim.loop
 
 -- TODO: check for windows?
 M.PATH_SEPARATOR = "/"
 
-local split = function(str, sep)
+M.split = function(str, sep)
   local items = {}
   local pattern = string.format("([^%s]+)", sep)
 
@@ -41,7 +42,7 @@ M.create_file = function(filepath)
     return false
   end
 
-  local parts = split(filepath, M.PATH_SEPARATOR)
+  local parts = M.split(filepath, M.PATH_SEPARATOR)
   -- pop last element
   local filename = table.remove(parts)
   -- create parent directories if necessary
@@ -94,6 +95,11 @@ M.get_indent = function(indent_char, multiplicator)
   end
 
   return indent
+end
+
+M.get_filename = function(path)
+  local parts = M.split(path, M.PATH_SEPARATOR)
+  return parts[#parts]
 end
 
 return M
