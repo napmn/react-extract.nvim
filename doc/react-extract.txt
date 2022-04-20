@@ -1,0 +1,148 @@
+==============================================================================
+INTRODUCTION                                                *react-extract.nvim*
+
+Purpose of this plugin is to simplify the process of extracting a chunk of JSX
+code into a new component in React projects.
+
+Features:
+  - distinction between JS and TS files
+  - configurable component templates for JS / TS
+  - preserves correct indentation
+  - autoimport of the new component (using Neovim's built-in LSP and `tsserver`)
+  - identifiers in extracted code are passed as props to the new component
+    (requires `nvim-treesitter`)
+  - easily configurable
+
+`react-extract.nvim` works with Neovim >= 0.7
+
+
+
+==============================================================================
+SETUP AND OPTIONS                            *react-extract-setup-and-options*
+
+Run setup function in your `init.lua` file. You can provide a table with
+options to override the defaults.
+
+Available options:
+
+use_autoimport~
+  Type: `boolean`, Default: `false`
+
+  Whether to use autoimport of newly created component or not.
+
+
+autoimport_defer_ms~
+  Type: `number`, Default: `350`
+
+  Number of milliseconds by which the autoimport call should be defered by.
+  Autoimport code action is not available immediately after replacing
+  selected code with new component. Tweak this value if autoimports
+  are failing too often.
+
+
+js_template_before~
+  Type: string, Default: See |react-extract-default-options|
+
+  Prefix for the extracted JSX code that is used in JS files.
+  Can contain special replacable strings -> |react-extract-template-strings|.
+
+
+js_template_after~
+  Type: string, Default: See |react-extract-default-options|
+
+  Suffix for the extracted JSX code that is used in JS files.
+  Can contain special replacable strings -> |react-extract-template-strings|.
+
+
+ts_type_property_template~
+  Type: string, Default: See |react-extract-default-options|
+
+  Text that is used for each property in definition of the type
+  for props of new component in TS files.
+  Can contain special replacable strings -> |react-extract-template-strings|.
+
+
+ts_template_before~
+  Type: string, Default: See |react-extract-default-options|
+
+  Prefix for the extracted JSX code that is used in TS files.
+  Can contain special replacable strings -> |react-extract-template-strings|.
+
+
+ts_template_after~
+  Type: string, Default: See |react-extract-default-options|
+
+  Suffix for the extracted JSX code that is used in TS files.
+  Can contain special replacable strings -> |react-extract-template-strings|.
+
+
+SPECIAL STRINGS IN TEMPLATES                    *react-extract-template-strings*
+
+[INDENT]~
+  Replaced with correct one level indentation (tab, 2 spaces, 4 spaces, ...).
+
+[PROPERTY]~
+  Replaced with property name. Only applicable in `ts_type_property_template`.
+
+[COMPONENT_NAME]~
+  Replaced with name of the component inferred from the filename.
+
+[TYPE_PROPERTIES]~
+  Replaced with concatenated representation of properties after applying
+  `ts_type_property_template` on each one of them.
+
+[EMPTY_LINE]~
+  Replaced with empty line.
+
+[PROPERTIES]~
+  Replaced with destructured properties e.g. `{ prop1, prop2 }` .
+
+
+                                                *react-extract-default-options*
+Example setup function call with default options:
+>
+  require("react-extract").setup({
+    ts_type_property_template = "[INDENT][PROPERTY]: any\n",
+    ts_template_before =
+      "type [COMPONENT_NAME]Props = {\n[TYPE_PROPERTIES]}\n[EMPTY_LINE]\n"
+      .. "export const [COMPONENT_NAME]: React.FC<[COMPONENT_NAME]Props> = "
+      .. "([PROPERTIES]) => {\n"
+      .. "[INDENT]return (\n",
+    ts_template_after = "[INDENT])\n}",
+    js_template_before =
+      "export const [COMPONENT_NAME] = "
+      .. "([PROPERTIES]) => {\n"
+      .. "[INDENT]return (\n",
+    js_template_after = "[INDENT])\n}",
+    use_autoimport = true,
+    autoimport_defer_ms = 350
+  })
+<
+The call above will have the same effect as calling:
+>
+  require("react-extract").setup({})
+<
+
+
+==============================================================================
+USAGE                                                      *react-extract-usage*
+
+React-extract works with visual selection (best with visual line) and does not
+create any keybinds automatically. Map `extract_to_new_file` function
+from `react-extract` module to your preferred mapping, e.g.:
+>
+  vim.keymap.set(
+    { "v" }, "<Leader>re", require("react-extract").extract_to_new_file
+  )
+<
+
+
+==============================================================================
+CONTRIBUTING                                        *react-extract-contributing*
+
+All PRs / Issues with possible enhancements or found bugs are welcomed and
+appreciated.
+
+
+
+vim:tw=78:ts=8:ft=help:norl:
