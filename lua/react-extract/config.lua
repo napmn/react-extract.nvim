@@ -13,6 +13,8 @@ local defaults = {
     .. "([PROPERTIES]) => {\n"
     .. "[INDENT]return (\n",
   js_template_after = "[INDENT])\n}",
+  jsx_indent_level = 2,
+  use_class_props = false,
   use_autoimport = true,
   autoimport_defer_ms = 350
 }

@@ -102,4 +102,16 @@ M.get_filename = function(path)
   return parts[#parts]
 end
 
+M.less_than = function(a, b) return a < b end
+
+M.filter_table = function(t, value, condition)
+  local filtered = {}
+  for k, v in ipairs(t) do
+    if condition(v, value) then
+      table.insert(filtered, v)
+    end
+  end
+  return filtered
+end
+
 return M

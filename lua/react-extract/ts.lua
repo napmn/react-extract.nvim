@@ -59,16 +59,21 @@ local function find_children_by_type(node, node_type)
   return t
 end
 
--- Returns set of identifiers found in given list
--- of jsx_expression nodes.
+-- Returns set of identifiers found in given list of jsx_expression
+-- nodes together with a table of their positions.
 local function find_indentifiers_in_expressions(jsx_expressions)
   local t = {}
   for _, expression in ipairs(jsx_expressions) do
     utils.table_extend(t, find_children_by_type(expression, "identifier"))
   end
 
+  local positions = {}
   local set = {}
   for _, identifier in ipairs(t) do
+    local row, col, _ = identifier:start()
+    local row_positions = positions[row] or {}
+    table.insert(row_positions, { row = row, col = col })
+    positions[row] = row_positions
     set[ts_utils.get_node_text(identifier, 0)[1]] = true
   end
 
@@ -76,11 +81,10 @@ local function find_indentifiers_in_expressions(jsx_expressions)
   for identifier in pairs(set) do
     table.insert(identifiers, identifier)
   end
-  return identifiers
+  return identifiers, positions
 end
 
 M.get_identifiers = function(start_row)
-  -- local original_start, _ = utils.get_selection_range()
   local node = ts_utils.get_node_at_cursor()
   if node == nil then
     vim.notify("No node found", "error")
@@ -94,9 +98,9 @@ M.get_identifiers = function(start_row)
   end
 
   local jsx_expressions = find_children_by_type(jsx_element, "jsx_expression")
-  local identifiers = find_indentifiers_in_expressions(jsx_expressions)
+  local identifiers, positions = find_indentifiers_in_expressions(jsx_expressions)
   table.sort(identifiers)
-  return identifiers
+  return identifiers, positions
 end
 
 return M
