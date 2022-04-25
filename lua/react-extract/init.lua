@@ -182,7 +182,7 @@ local replace_content_in_original = function(
 end
 
 local reduce_lines_indent = function(lines, indent_char)
-  local min_indent = utils.get_indent(indent_char, 2)
+  local min_indent = utils.get_indent(indent_char, opts.jsx_indent_level)
   local initial_indent = #string.match(lines[1], "^%s+")
   local sub_indent = initial_indent - min_indent
   local sub_indent_pattern = "^" .. string.rep("%s", sub_indent)
@@ -193,6 +193,33 @@ local reduce_lines_indent = function(lines, indent_char)
     table.insert(reduced_lines, reduced_line)
   end
   return reduced_lines
+end
+
+-- adds prefix to each identifier based on it's original
+-- position in extracted JSX
+local add_prefix_to_identifiers = function(
+  positions,
+  lines,
+  original_start,
+  prefix
+)
+  local prefix_len = #prefix
+  for row, row_positions in pairs(positions) do
+    local line_index = row - original_start + 1
+    local line = lines[line_index]
+    -- keep track of indexes of already prefixed identifiers in current line
+    local added_to_index = {}
+    for _, position in pairs(row_positions) do
+      local added_num = #utils.filter_table(added_to_index, position["col"], utils.less_than)
+      line = string.sub(line, 1, position["col"] + added_num * prefix_len)
+        .. prefix
+        .. string.sub(line, position["col"] + 1 + added_num * prefix_len, -1)
+      table.insert(added_to_index, position["col"])
+    end
+    lines[line_index] = line
+  end
+
+  return lines
 end
 
 local handle_user_input = function(filepath)
@@ -218,8 +245,17 @@ local handle_user_input = function(filepath)
     selection_lines[1],
     indent_char
   )
-  local selection_lines = reduce_lines_indent(selection_lines, indent_char)
-  local identifiers = ts.get_identifiers(original_start)
+  local identifiers, positions = ts.get_identifiers(original_start)
+  if opts.use_class_props then
+    selection_lines = add_prefix_to_identifiers(
+      positions,
+      selection_lines,
+      original_start,
+      "this.props."
+    )
+  end
+  selection_lines = reduce_lines_indent(selection_lines, indent_char)
+
   local component_name = insert_component_content(
     filepath,
     selection_lines,
