@@ -40,22 +40,36 @@ autoimport_defer_ms~
   are failing too often.
 
 
+jsx_indent_level~
+  Type: `number`, Default: `2`
+
+  Level of indentation for JSX content that will be in the new component.
+  Useful mainly when using class component template.
+
+
+use_class_props~
+  Type: `boolean`, Default: `false`
+
+  Whether to prefix properties in the new component with `this.props.`
+  string.
+
+
 js_template_before~
-  Type: string, Default: See |react-extract-default-options|
+  Type: `string`, Default: See |react-extract-default-options|
 
   Prefix for the extracted JSX code that is used in JS files.
   Can contain special replacable strings -> |react-extract-template-strings|.
 
 
 js_template_after~
-  Type: string, Default: See |react-extract-default-options|
+  Type: `string`, Default: See |react-extract-default-options|
 
   Suffix for the extracted JSX code that is used in JS files.
   Can contain special replacable strings -> |react-extract-template-strings|.
 
 
 ts_type_property_template~
-  Type: string, Default: See |react-extract-default-options|
+  Type: `string`, Default: See |react-extract-default-options|
 
   Text that is used for each property in definition of the type
   for props of new component in TS files.
@@ -63,14 +77,14 @@ ts_type_property_template~
 
 
 ts_template_before~
-  Type: string, Default: See |react-extract-default-options|
+  Type: `string`, Default: See |react-extract-default-options|
 
   Prefix for the extracted JSX code that is used in TS files.
   Can contain special replacable strings -> |react-extract-template-strings|.
 
 
 ts_template_after~
-  Type: string, Default: See |react-extract-default-options|
+  Type: `string`, Default: See |react-extract-default-options|
 
   Suffix for the extracted JSX code that is used in TS files.
   Can contain special replacable strings -> |react-extract-template-strings|.
@@ -114,6 +128,8 @@ Example setup function call with default options:
       .. "([PROPERTIES]) => {\n"
       .. "[INDENT]return (\n",
     js_template_after = "[INDENT])\n}",
+    jsx_indent_level = 2,
+    use_class_props = false,
     use_autoimport = true,
     autoimport_defer_ms = 350
   })
