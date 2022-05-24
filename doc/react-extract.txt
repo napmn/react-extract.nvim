@@ -11,6 +11,7 @@ Features:
   - autoimport of the new component (using Neovim's built-in LSP and `tsserver`)
   - identifiers in extracted code are passed as props to the new component
     (requires `nvim-treesitter`)
+  - extracting to new file / current file
   - easily configurable
 
 `react-extract.nvim` works with Neovim >= 0.7
@@ -90,6 +91,20 @@ ts_template_after~
   Can contain special replacable strings -> |react-extract-template-strings|.
 
 
+local_extract_strategy~
+  Type: `string`, Default: `BEFORE`
+
+  Strategy used while extracting component into the current file.
+  Defines where the new component will be placed.
+  Supported values are:
+    `BEFORE` - before current component
+    `AFTER` - after current component
+    `EOF` - to the end of file
+
+  `BEFORE` and `AFTER` requires treesitter. If treesitter is not present
+  strategy falls back to `EOF`.
+
+
 SPECIAL STRINGS IN TEMPLATES                    *react-extract-template-strings*
 
 [INDENT]~
@@ -131,7 +146,8 @@ Example setup function call with default options:
     jsx_indent_level = 2,
     use_class_props = false,
     use_autoimport = true,
-    autoimport_defer_ms = 350
+    autoimport_defer_ms = 350,
+    local_extract_strategy = "BEFORE"
   })
 <
 The call above will have the same effect as calling:
@@ -144,11 +160,15 @@ The call above will have the same effect as calling:
 USAGE                                                      *react-extract-usage*
 
 React-extract works with visual selection (best with visual line) and does not
-create any keybinds automatically. Map `extract_to_new_file` function
-from `react-extract` module to your preferred mapping, e.g.:
+create any keybinds automatically. Map `extract_to_new_file` /
+`extract_to_current_file` function from `react-extract` module to your preferred
+mapping, e.g.:
 >
   vim.keymap.set(
     { "v" }, "<Leader>re", require("react-extract").extract_to_new_file
+  )
+  vim.keymap.set(
+    { "v" }, "<Leader>rc", require("react-extract").extract_to_current_file
   )
 <
 

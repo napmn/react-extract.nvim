@@ -13,6 +13,7 @@ Neovim plugin for extracting JSX into a new React component.
   - autoimport of the new component (using Neovim's built-in LSP and `tsserver`)
   - identifiers in extracted code are passed as props to the new component
     (requires `nvim-treesitter`)
+  - extracting to new file / current file
   - easily configurable
 
 ## :computer: Installation
@@ -54,7 +55,8 @@ require("react-extract").setup({
   jsx_indent_level = 2,
   use_class_props = false,
   use_autoimport = true,
-  autoimport_defer_ms = 350
+  autoimport_defer_ms = 350,
+  local_extract_strategy = "BEFORE"
 })
 ```
 
@@ -65,17 +67,20 @@ Example configurations (e.g. for class component) can be found in [examples](exa
 
 ## :scissors: Usage
 
-Map `extract_to_new_file` function to your preferred mapping, e.g.:
+Map `extract_to_new_file` / `extract_to_current_file` function to your preferred mapping, e.g.:
 
 ```lua
 vim.keymap.set({ "v" }, "<Leader>re", require("react-extract").extract_to_new_file)
+vim.keymap.set({ "v" }, "<Leader>rc", require("react-extract").extract_to_current_file)
 ```
 
 For extracting first select part of JSX that you want to extract. Recommended way
-is using visual line mode. :warning:&nbsp;Indent inconsistencies can occur while using visual character
-mode.&nbsp;:warning:
+is using visual line mode.
 
-Then use your mapped key, enter path where the new component should be created and that's it!
+:warning:&nbsp;Indent inconsistencies can occur while using visual character mode.&nbsp;:warning:
+
+Then use your mapped key, enter path where the new component should be created (or enter name
+of the new component if extracting to current file) and that's it!
 
 ## :octocat: Contributing
 
@@ -83,6 +88,4 @@ All PRs / Issues with possible enhancements or found bugs are welcomed and appre
 
 ## :construction: TODO
 
-- [ ] extract component to current file
 - [ ] infer type from original identifiers if possible
-
