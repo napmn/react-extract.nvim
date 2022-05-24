@@ -102,6 +102,10 @@ M.get_filename = function(path)
   return parts[#parts]
 end
 
+M.get_filename_base_and_extension = function(path)
+  return string.match(M.get_filename(path), "^(.+)[.](.+)$")
+end
+
 M.less_than = function(a, b) return a < b end
 
 M.filter_table = function(t, value, condition)

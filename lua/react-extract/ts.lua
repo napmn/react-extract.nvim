@@ -1,7 +1,8 @@
 local status_ok, ts_utils = pcall(require, "nvim-treesitter.ts_utils")
 if not status_ok then
   return {
-    get_identifiers = function() return {} end
+    get_identifiers = function() return {} end,
+    get_original_component_node = function() return nil end
   }
 end
 
@@ -101,6 +102,20 @@ M.get_identifiers = function(start_row)
   local identifiers, positions = find_indentifiers_in_expressions(jsx_expressions)
   table.sort(identifiers)
   return identifiers, positions
+end
+
+M.get_original_component_node = function()
+  local node = ts_utils.get_node_at_cursor()
+  if node == nil then
+    vim.notify("No node found", "error")
+    return
+  end
+
+  while node ~= nil and node:type() ~= "lexical_declaration" do
+    node = node:parent()
+  end
+
+  return node
 end
 
 return M

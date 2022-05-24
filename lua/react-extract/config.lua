@@ -1,5 +1,12 @@
 local M = {}
 
+local available_local_extract_strategies = {
+  EOF = true,
+  BEFORE = true,
+  AFTER = true
+}
+local default_local_extract_strategy = "BEFORE"
+
 local defaults = {
   ts_type_property_template = "[INDENT][PROPERTY]: any\n",
   ts_template_before =
@@ -16,10 +23,17 @@ local defaults = {
   jsx_indent_level = 2,
   use_class_props = false,
   use_autoimport = true,
-  autoimport_defer_ms = 350
+  autoimport_defer_ms = 350,
+  local_extract_strategy = default_local_extract_strategy
 }
 
 M.apply_options = function(user_opts)
+  user_opts = user_opts or {}
+  if user_opts.local_extract_strategy ~= nil
+    and available_local_extract_strategies[user_opts.local_extract_strategy] == nil then
+      vim.notify("Extract strategy " .. user_opts.local_extract_strategy .. " does not exist.", "error")
+      user_opts.local_extract_strategy = default_local_extract_strategy
+    end
   return vim.tbl_deep_extend("force", {}, defaults, user_opts or {})
 end
 
