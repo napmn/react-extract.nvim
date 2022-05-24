@@ -21,7 +21,7 @@ require("react-extract").setup({
 
 Example result:
 
-```ts
+```js
 type ButtonContentProps = {
   answer: any
   count: any
